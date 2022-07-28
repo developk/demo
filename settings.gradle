@@ -1,0 +1,6 @@
+rootProject.name = 'demo'
+include 'application-adm-server'
+include 'domain'
+include 'commons'
+include 'app-1'
+include 'app-2'

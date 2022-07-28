@@ -1,0 +1,12 @@
+plugins {
+    id "io.freefair.lombok" version "6.5.0.2"
+}
+
+dependencies {
+    implementation project(':commons')
+    implementation project(':domain')
+
+    implementation 'de.codecentric:spring-boot-admin-starter-client:2.7.0'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springdoc:springdoc-openapi-ui:1.6.9'
+}
