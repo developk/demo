@@ -23,7 +23,7 @@ public class Account {
 	@Column(length = 50, nullable = false)
 	private String name;
 
-	@OneToOne(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToOne(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
 	UserInfo userInfo;
 
 	@OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)

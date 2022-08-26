@@ -1,6 +1,9 @@
 package com.example.domain.models;
 
 import com.example.domain.config.JPAConfig;
+import com.example.domain.dto.AccountDTO;
+import com.example.domain.dto.PostDTO;
+import com.example.domain.dto.Proc1DTO;
 import com.example.domain.models.account.AccountRepository;
 import com.example.domain.models.account.QAccount;
 import com.example.domain.models.account.projection.AccountProjection;
@@ -16,6 +19,7 @@ import com.querydsl.core.group.GroupBy;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Session;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,8 +27,14 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
+import javax.persistence.EntityManager;
+import java.sql.CallableStatement;
+import java.sql.ResultSet;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -34,6 +44,7 @@ import java.util.List;
 )
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@ActiveProfiles("local.mysql")
 public class AccountTests {
 
 	@Autowired
@@ -41,6 +52,9 @@ public class AccountTests {
 
 	@Autowired
 	private JPAQueryFactory jpaQueryFactory;
+
+	@Autowired
+	private EntityManager entityManager;
 
 	@DisplayName("기본 findAll")
 	@Test
@@ -161,6 +175,62 @@ public class AccountTests {
 					);
 				}
 		);
+	}
+
+	@DisplayName("프로시저 Multiple Result Set Test")
+	@Test
+	void testProcedure() {
+
+		List<AccountDTO> accounts = new ArrayList<>();
+		List<PostDTO> posts = new ArrayList<>();
+
+		Session session = entityManager.unwrap(Session.class);
+		session.doWork(connection -> {
+			CallableStatement stmt = connection.prepareCall("{ CALL PROC1() }");
+			boolean hasMoreResults = stmt.execute();
+
+			int currentResultSetIndex = 1;
+
+
+			while (hasMoreResults) {
+
+				ResultSet rs = stmt.getResultSet();
+				while (rs.next()) {
+					if (currentResultSetIndex == 1) {
+						accounts.add(
+								AccountDTO.builder()
+										.id(rs.getLong("id"))
+										.name(rs.getString("name"))
+										.build()
+						);
+					} else if (currentResultSetIndex == 2) {
+						posts.add(
+								PostDTO.builder()
+										.id(rs.getLong("id"))
+										.accountId(rs.getLong("account_id"))
+										.subject(rs.getString("subject"))
+										.content(rs.getString("content"))
+										.postedAt(rs.getObject("posted_at", LocalDateTime.class))
+										.build()
+						);
+					}
+				}
+
+				rs.close();
+
+				hasMoreResults = stmt.getMoreResults();
+				currentResultSetIndex++;
+
+			}
+
+		});
+
+		Proc1DTO procResult = Proc1DTO.builder()
+				                      .accounts(accounts)
+				                      .posts(posts)
+				                      .build();
+
+		session.close();
 	}
 
 }

@@ -1,3 +1,22 @@
+logging.level:
+  root: info
+  org.springframework: error
+  jdbc: off
+  jdbc.sqlonly: off
+  jdbc.audit: off
+  jdbc.resultset: off
+  jdbc.resultsettable: debug
+  jdbc.connection: off
+  jdbc.sqltiming: info
+#  org.hibernate.SQL: debug
+#  org.hibernate.type.descriptor.sql: trace
+
+spring.sql.init:
+  mode: never
+
+---
+spring.config.activate.on-profile: local.h2
+
 spring:
 
   datasource:
@@ -20,15 +39,28 @@ spring:
     console:
       enabled: true
 
-logging.level:
-  root: info
-  org.springframework: error
-  jdbc: off
-  jdbc.sqlonly: off
-  jdbc.audit: off
-  jdbc.resultset: off
-  jdbc.resultsettable: debug
-  jdbc.connection: off
-  jdbc.sqltiming: info
-#  org.hibernate.SQL: debug
-#  org.hibernate.type.descriptor.sql: trace
+log4jdbc:
+  log4j2:
+    properties:
+      file: classpath:log4jdbc.log4j2.h2.properties
+
+---
+spring.config.activate.on-profile: local.mysql
+
+spring:
+
+  datasource:
+    url: jdbc:log4jdbc:mysql://localhost:33306/test
+    username: root
+    password: root
+    driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+    generate-ddl: false
